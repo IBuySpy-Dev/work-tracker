@@ -377,4 +377,34 @@ Decision file: N/A (straightforward test addition, no architectural decisions)
 
 - 2026-07-18: Issue #220 — Lazy Prisma client initialization. Refactored `apps/api/src/config/database.ts` to use a Proxy-based lazy singleton: PrismaClient is NOT instantiated at module evaluation time, only on first property access. Also made `apps/api/src/config/env.ts` fully lazy — env validation no longer runs at import time, deferred to first `env.X` access or `loadEnv()` call. Both changes fix test setup ordering: `setup.ts` env vars are now guaranteed to be set before any Prisma or env initialization. Added `getPrismaClient()` for direct access and `_resetPrismaClient()` for test isolation. Proxy pattern preserves the `prisma` export name — zero consumer changes needed. Branch: squad/220-prisma-lazy-init.
 
+## Session: Test Fixes Phase — Integration & Negative Tests (2026-03-18T17:10Z)
+
+**Session ID:** 2026-03-18T17-10Z-test-fixes
+**Agents:** Bunk (Backend), Sydnor (Tester)
+
+### Issue #220 Fix Summary (PR #228)
+
+**Root Cause:** Integration test suites (documents, employees, medical, notifications, qualifications, standards) failed with database initialization errors because:
+1. `database.ts` instantiated PrismaClient at module evaluation time
+2. `env.ts` eagerly parsed and validated env vars at import time
+3. Test setup file (`setup.ts`) couldn't set `DATABASE_URL` and `JWT_SECRET` before these imports ran
+
+**Solution Implemented:**
+- **database.ts:** Replaced eager singleton with Proxy-based lazy singleton
+  - PrismaClient creation deferred to first property access
+  - Export name `prisma` preserved (zero consumer changes)
+  - Added `_resetPrismaClient()` for test isolation
+  
+- **env.ts:** Removed eager `parseEnv()` at module scope
+  - Lazy validation on first `env.X` property access
+  - `loadEnv()` handles keyvault and non-keyvault paths
+  - Production startup unchanged
+
+**Test Results:**
+- All 6 affected integration suites now load without errors
+- 281 tests passing
+- Production startup path unaffected
+
+**Decision:** Lazy Prisma Client Initialization (merged to decisions.md)
+
 
