@@ -374,3 +374,28 @@ Decision files: \.squad/decisions/inbox/daniels-service-architecture.md\, \.squa
 - Data-layer tests are self-contained (no Express app import) so they run clean
 - Platform + Identity tests follow existing integration test patterns (vi.spyOn, supertest, helpers.ts)
 - Pre-existing issue: env.ts calls process.exit(1) during module evaluation in some Vitest workers — affects ALL integration tests that import createApp. This should be fixed by wrapping env.ts validation in a lazy init pattern.
+
+## Session: Negative Test Fixes (PR #229)
+
+**Date:** 2026-03-18
+**Branch:** squad/218-negative-test-fixes
+**Issues:** #218, #219, #221-#227
+
+### What Was Done
+Fixed 96 failing negative tests across 9 modules. Root causes:
+- Tests used PATCH but routers define PUT (employees, qualifications, medical, standards, hours, labels)
+- Test URLs didn't match actual route paths (wrong segments, wrong nesting)
+- Tests used insufficient auth tokens (supervisor where manager+ required)
+- 12 tests targeted non-existent DELETE routes — removed
+
+### Key Learnings
+1. **Labels admin pattern**: Admin routes at /labels/admin and /labels/admin/:id — the /admin prefix is inside the router
+2. **Notifications admin pattern**: Escalation rules at /admin/escalation-rules within the notifications router
+3. **Standards requirements**: POST /:id/requirements — standardId from URL param, merged into body before validation
+4. **Templates fulfillment routes**: Self-attest, attach-document, third-party-verify live on fulfillmentsRouter (/api/fulfillments/:id/*), NOT assignmentsRouter
+5. **Medical module gap**: medicalQuerySchema exists in validators.ts but no GET/list route is wired
+6. **RBAC verification**: Always cross-check equireMinRole() vs equireRole() in router middleware against test tokens
+
+### Results
+- 237/237 negative tests pass (was 153/249)
+- Zero regressions on 867 existing tests
