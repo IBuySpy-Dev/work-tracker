@@ -75,6 +75,15 @@ export interface Qualification {
   updatedAt?: string;
 }
 
+export interface MedicalClearance {
+  id: string;
+  clearanceType: string;
+  status: string;
+  expiresAt?: string | null;
+  expirationDate?: string | null;
+  documentCount?: number;
+}
+
 export interface MedicalRecord {
   id: string;
   employeeId?: string;
