@@ -54,7 +54,7 @@ export function createPlatformRouter(options: CreatePlatformRouterOptions = {}) 
         timestamp: new Date().toISOString(),
         checks,
       });
-    } catch (_error) {
+    } catch {
       res.status(503).json({
         status: "NOT_READY",
         timestamp: new Date().toISOString(),
@@ -75,7 +75,7 @@ export function createPlatformRouter(options: CreatePlatformRouterOptions = {}) 
         uptime_seconds: getUptimeSeconds(),
         dependencies: deps,
       });
-    } catch (_error) {
+    } catch {
       res.status(503).json({
         status: "DOWN",
         timestamp: new Date().toISOString(),

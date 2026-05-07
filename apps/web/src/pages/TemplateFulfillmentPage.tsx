@@ -362,11 +362,11 @@ export default function TemplateFulfillmentPage() {
                           <div className="template-screen__evidence-empty">No evidence uploaded for this requirement yet.</div>
                         ) : (
                           <div className="template-screen__evidence-list">
-                            {evidenceDocuments.map((document) => (
-                              <div key={document.id} className="template-screen__evidence-item">
+                            {evidenceDocuments.map((doc) => doc && (
+                              <div key={doc.id} className="template-screen__evidence-item">
                                 <div>
-                                  <strong>{document.name || document.fileName || 'Evidence document'}</strong>
-                                  <p className="my-page__muted">Status: {document.status}</p>
+                                  <strong>{doc.name || doc.fileName || 'Evidence document'}</strong>
+                                  <p className="my-page__muted">Status: {doc.status}</p>
                                 </div>
                                 <span className="my-badge my-badge--active">Uploaded</span>
                               </div>

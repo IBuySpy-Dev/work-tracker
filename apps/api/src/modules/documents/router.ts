@@ -47,6 +47,8 @@ router.get("/employee/:employeeId", authenticate, async (req: AuthenticatedReque
 });
 
 // GET /api/documents/:id
+// TODO: Add service-level ownership check — verify document belongs to req.user
+// or user has Supervisor+ role. See #221 for full IDOR remediation.
 router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const doc = await documentsService.getDocument(param(req, "id"));

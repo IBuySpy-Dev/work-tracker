@@ -8,7 +8,7 @@ A workforce readiness and qualification management platform for regulated indust
 
 ```
 ├── apps/
-│   ├── api/             Express REST API (11 modules, 415 tests)
+│   ├── api/             Express REST API (13 modules, 845+ tests)
 │   ├── web/             Frontend app (TBD)
 │   └── admin/           Management app (TBD)
 ├── data/                Prisma schema, migrations, seeds (PostgreSQL)
@@ -48,7 +48,7 @@ npm run typecheck
 
 | Package | Path | Description |
 |---------|------|-------------|
-| `@e-clat/api` | `apps/api/` | REST API — 11 modules: auth, employees, hours, documents, qualifications, medical, standards, notifications, labels, templates, dashboard |
+| `@e-clat/api` | `apps/api/` | REST API — 13 modules: auth, employees, hours, documents, qualifications, medical, standards, notifications, labels, templates, dashboard, identity, platform |
 | `@e-clat/web` | `apps/web/` | Frontend (scaffold) |
 | `@e-clat/admin` | `apps/admin/` | Admin management (scaffold) |
 | `@e-clat/shared` | `packages/shared/` | Shared domain types and error classes |

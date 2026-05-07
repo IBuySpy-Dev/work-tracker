@@ -11,6 +11,7 @@ data "terraform_remote_state" "foundation" {
     storage_account_name = local.backend_storage_account_name
     container_name       = "tfstate"
     key                  = "foundation.tfstate"
+    use_azuread_auth     = true
   }
 }
 
@@ -18,7 +19,7 @@ module "database" {
   source = "../../modules/database"
 
   environment         = var.environment
-  location            = data.terraform_remote_state.foundation.outputs.location
+  location            = var.db_location != "" ? var.db_location : data.terraform_remote_state.foundation.outputs.location
   resource_group_name = data.terraform_remote_state.foundation.outputs.resource_group_name
   key_vault_id        = data.terraform_remote_state.foundation.outputs.key_vault_id
   project_name        = var.project_name

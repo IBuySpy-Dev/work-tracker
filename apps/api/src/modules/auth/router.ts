@@ -1,11 +1,20 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { authenticate, AuthenticatedRequest } from "../../middleware";
 import { authService } from "./service";
 import { registerSchema, loginSchema, refreshTokenSchema, changePasswordSchema } from "./validators";
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: "TOO_MANY_REQUESTS", message: "Too many authentication attempts, please try again later" } },
+});
+
 const router = Router();
 
-router.post("/register", async (req, res, next) => {
+router.post("/register", authLimiter, async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
     const result = await authService.register(input);
@@ -13,7 +22,7 @@ router.post("/register", async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post("/login", async (req, res, next) => {
+router.post("/login", authLimiter, async (req, res, next) => {
   try {
     const input = loginSchema.parse(req.body);
     const tokens = await authService.login(input);

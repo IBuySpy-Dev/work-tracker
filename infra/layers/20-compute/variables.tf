@@ -15,9 +15,13 @@ variable "project_name" {
 }
 
 variable "api_image_tag" {
-  description = "Container image tag for the API."
+  description = "Container image tag for the API (full git SHA required)."
   type        = string
-  default     = "latest"
+
+  validation {
+    condition     = can(regex("^[0-9a-f]{40}$", var.api_image_tag))
+    error_message = "api_image_tag must be a full 40-character git commit SHA."
+  }
 }
 
 variable "container_app_target_port" {

@@ -46,9 +46,9 @@ export function parseRuntimeFeatureFlagOverrides(raw = process.env.ECLAT_FLAG_OV
   try {
     const parsed = JSON.parse(raw) as unknown;
     return FeatureFlagOverrideMapSchema.parse(parsed);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid ECLAT_FLAG_OVERRIDES_JSON: ${message}`);
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Invalid ECLAT_FLAG_OVERRIDES_JSON: ${message}`, { cause });
   }
 }
 

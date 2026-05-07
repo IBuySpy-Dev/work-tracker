@@ -29,6 +29,7 @@ ENV PORT=3000
 CMD ["npm", "run", "dev", "-w", "@e-clat/api"]
 
 FROM node:20-bookworm-slim AS runtime
+RUN groupadd -r appuser && useradd -r -g appuser -d /workspace appuser
 WORKDIR /workspace
 ENV NODE_ENV=production
 ENV PORT=8080
@@ -40,5 +41,6 @@ COPY --from=build /workspace/apps/api/dist ./apps/api/dist
 COPY --from=build /workspace/packages/shared/package.json ./packages/shared/package.json
 COPY --from=build /workspace/packages/shared/dist ./packages/shared/dist
 COPY --from=build /workspace/data/prisma ./data/prisma
+USER appuser
 EXPOSE 8080
 CMD ["node", "apps/api/dist/index.js"]

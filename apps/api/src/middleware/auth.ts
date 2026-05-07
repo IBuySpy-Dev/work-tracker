@@ -61,3 +61,26 @@ export function requireMinRole(minRole: Role) {
     next();
   };
 }
+
+/**
+ * Enforces object-level authorization: the requesting user must either own the
+ * resource (their user ID matches the route param) or hold at least `minRole`.
+ *
+ * @param paramName - The route parameter containing the target employee/user ID.
+ * @param minRole - Minimum role that bypasses the ownership check (default: SUPERVISOR).
+ */
+export function requireSelfOrMinRole(paramName = "id", minRole: Role = "supervisor" as Role) {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new UnauthorizedError());
+    }
+    const targetId = req.params[paramName];
+    if (req.user.id === targetId) {
+      return next();
+    }
+    if (RoleHierarchy[req.user.role] >= RoleHierarchy[minRole]) {
+      return next();
+    }
+    return next(new ForbiddenError("You can only access your own records"));
+  };
+}
