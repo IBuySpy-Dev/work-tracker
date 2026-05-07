@@ -11,6 +11,7 @@ data "terraform_remote_state" "foundation" {
     storage_account_name = local.backend_storage_account_name
     container_name       = "tfstate"
     key                  = "foundation.tfstate"
+    use_azuread_auth     = true
   }
 }
 
@@ -22,6 +23,7 @@ data "terraform_remote_state" "data" {
     storage_account_name = local.backend_storage_account_name
     container_name       = "tfstate"
     key                  = "data.tfstate"
+    use_azuread_auth     = true
   }
 }
 

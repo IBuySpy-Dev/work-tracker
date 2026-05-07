@@ -11,7 +11,7 @@ terraform {
 
 locals {
   name_prefix            = "${var.project_name}-${var.environment}"
-  server_name            = "${local.name_prefix}-postgres"
+  server_name            = "${local.name_prefix}-pgsql"
   administrator_login    = coalesce(var.administrator_login, substr(lower(replace("${var.project_name}${var.environment}admin", "-", "")), 0, 16))
   connection_secret_name = "${local.name_prefix}-postgres-connection"
 

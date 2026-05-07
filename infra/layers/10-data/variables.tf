@@ -25,6 +25,12 @@ variable "database_name" {
   default     = "eclat"
 }
 
+variable "db_location" {
+  description = "Override location for PostgreSQL when primary region is restricted."
+  type        = string
+  default     = ""
+}
+
 variable "documents_container_name" {
   description = "Blob container name for application documents."
   type        = string
