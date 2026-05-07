@@ -24,10 +24,10 @@ const baseRequirementSchema = z.object({
 }).superRefine((value, ctx) => {
   // Normalize attestation levels to unique, ordered set
   if (value.attestationLevels) {
-    const normalized = normalizeAttestationLevels(value.attestationLevels as any);
+    const normalized = normalizeAttestationLevels(value.attestationLevels);
     
     // Validate attestation policy constraints
-    const errors = validateAttestationPolicy(value.proofType as any, normalized as any);
+    const errors = validateAttestationPolicy(value.proofType ?? null, normalized);
     
     if (errors.length > 0) {
       ctx.addIssue({

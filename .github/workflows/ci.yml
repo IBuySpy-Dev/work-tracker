@@ -216,7 +216,7 @@ jobs:
         run: npx prisma db seed
         working-directory: data
       - name: Run API tests
-        run: npx vitest run
+        run: npx vitest run --config tests/vitest.config.mts
 
   test-web:
     name: Web Tests

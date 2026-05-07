@@ -17,8 +17,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["apps/*/tests/**/*.test.{ts,tsx}", "packages/*/tests/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
-    exclude: ["tests/smoke/**/*.smoke.test.ts"],
+    include: ["apps/api/tests/**/*.test.{ts,tsx}", "packages/*/tests/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
+    exclude: ["tests/smoke/**/*.smoke.test.ts", "tests/e2e/**", "apps/web/**"],
     setupFiles: [fromRoot("apps", "api", "tests", "setup.ts")],
     clearMocks: true,
     restoreMocks: true,
