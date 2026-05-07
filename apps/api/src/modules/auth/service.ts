@@ -29,8 +29,9 @@ interface MockAuthUser extends AuthTokenUser {
   passwordHash: string;
 }
 
+const MOCK_AUTH_ALLOWED = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+
 const MOCK_USER_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-// Password123! — matches test expectations
 const MOCK_PASSWORD_HASH = "$2b$10$ZXFw0QtD.9bPiT.5dvv10e94YbLeopla0m5ElRoSL/9pK3B0.iHm6";
 
 const mockUsers: MockAuthUser[] = [
@@ -58,6 +59,10 @@ function buildTokens(user: AuthTokenUser, refreshToken = signRefreshToken(user))
 export const authService: AuthService = {
   register: () => notImplemented("register"),
   async login(input) {
+    if (!MOCK_AUTH_ALLOWED) {
+      throw new UnauthorizedError("Mock authentication is disabled in this environment");
+    }
+
     const user = findMockUserByEmail(input.email);
     if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
       throw new UnauthorizedError("Invalid email or password");

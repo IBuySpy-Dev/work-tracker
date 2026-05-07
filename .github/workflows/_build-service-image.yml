@@ -50,10 +50,9 @@ jobs:
           images: |
             ${{ inputs.registry && format('{0}/{1}', inputs.registry, inputs.service-name) || format('e-clat-{0}', inputs.service-name) }}
           tags: |
-            type=sha,prefix=,format=short
+            type=sha,prefix=,format=long
             type=ref,event=branch
             type=ref,event=pr
-            type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build Docker image
         id: build

@@ -10,6 +10,11 @@ output "api_url" {
   value       = module.compute.api_url
 }
 
+output "acr_login_server" {
+  description = "ACR login server hostname (from foundation remote state)."
+  value       = data.terraform_remote_state.foundation.outputs.container_registry_login_server
+}
+
 # ---------------------------------------------------------------------------
 # Service-group outputs
 # ---------------------------------------------------------------------------
