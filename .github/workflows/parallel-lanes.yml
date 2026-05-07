@@ -146,6 +146,9 @@ jobs:
     name: API Tests
     runs-on: ubuntu-latest
     needs: typecheck
+    concurrency:
+      group: db-migrate-${{ github.ref }}
+      cancel-in-progress: false
     services:
       postgres:
         image: postgres:16

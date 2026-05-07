@@ -31,6 +31,9 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    concurrency:
+      group: db-migrate-quality-${{ github.ref || github.run_id }}
+      cancel-in-progress: false
     services:
       postgres:
         image: ${{ inputs.needs-postgres && 'postgres:16' || '' }}
