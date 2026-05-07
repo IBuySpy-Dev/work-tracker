@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { authenticate, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { qualificationsService } from "./service";
@@ -23,7 +23,7 @@ router.get("/", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: Auth
   } catch (err) { next(err); }
 });
 
-router.get("/employee/:employeeId", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/employee/:employeeId", authenticate, requireSelfOrMinRole("employeeId"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const result = await qualificationsService.listByEmployee(param(req, "employeeId"));
     res.json(result);

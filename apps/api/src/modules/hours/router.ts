@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { authenticate, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { hoursService } from "./service";
@@ -90,8 +90,8 @@ router.get("/team-progress", authenticate, requireMinRole(Roles.SUPERVISOR), asy
   } catch (err) { next(err); }
 });
 
-// GET /api/hours/progress/:employeeId — Manager view of employee hours progress (Supervisor+)
-router.get("/progress/:employeeId", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: AuthenticatedRequest, res, next) => {
+// GET /api/hours/progress/:employeeId — Employee or Supervisor+ view of hours progress
+router.get("/progress/:employeeId", authenticate, requireSelfOrMinRole("employeeId"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const filters = progressQuerySchema.parse(req.query);
     const result = await hoursService.getEmployeeProgress(param(req, "employeeId"), filters);
@@ -100,7 +100,7 @@ router.get("/progress/:employeeId", authenticate, requireMinRole(Roles.SUPERVISO
 });
 
 // GET /api/hours/employee/:id — Retrieve hours
-router.get("/employee/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/employee/:id", authenticate, requireSelfOrMinRole("id"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const query = hoursQuerySchema.parse(req.query);
     const result = await hoursService.getEmployeeHours(param(req, "id"), query.from, query.to, query.page, query.limit);
