@@ -1,0 +1,36 @@
+name: Validate BOM
+
+on:
+  pull_request:
+    paths:
+      - ".intake.yml"
+      - "deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-bom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout spoke
+        uses: actions/checkout@v6
+        with:
+          path: spoke
+
+      - name: Checkout hub schema
+        uses: actions/checkout@v6
+        with:
+          repository: IBuySpy-Dev/app-migration-with-ai
+          ref: main
+          path: hub
+
+      - name: Validate intake BOM
+        shell: pwsh
+        run: |
+          $intakePath = 'spoke/.intake.yml'
+          $schemaPath = 'hub/factory/intake/bom.schema.json'
+          $validatorPath = 'hub/factory/intake/validate-bom.ps1'
+          & $validatorPath -IntakeFile $intakePath -SchemaFile $schemaPath -StrictMode $true
+
