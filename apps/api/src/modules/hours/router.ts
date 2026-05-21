@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { assertSelfOrMinRole, authenticate, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { hoursService } from "./service";
@@ -23,6 +23,7 @@ const router = Router();
 router.post("/clock-in", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = clockInSchema.parse(req.body);
+    assertSelfOrMinRole(req.user, input.employeeId);
     const record = await hoursService.clockIn(input);
     res.status(201).json(record);
   } catch (err) { next(err); }
@@ -32,6 +33,7 @@ router.post("/clock-in", authenticate, async (req: AuthenticatedRequest, res, ne
 router.post("/clock-out", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = clockOutSchema.parse(req.body);
+    assertSelfOrMinRole(req.user, input.employeeId);
     const record = await hoursService.clockOut(input);
     res.status(201).json(record);
   } catch (err) { next(err); }
@@ -41,6 +43,7 @@ router.post("/clock-out", authenticate, async (req: AuthenticatedRequest, res, n
 router.post("/manual", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = manualEntrySchema.parse(req.body);
+    assertSelfOrMinRole(req.user, input.employeeId);
     const record = await hoursService.submitManualEntry(input, req.user!.id);
     res.status(201).json(record);
   } catch (err) { next(err); }
@@ -100,7 +103,7 @@ router.get("/progress/:employeeId", authenticate, requireMinRole(Roles.SUPERVISO
 });
 
 // GET /api/hours/employee/:id — Retrieve hours
-router.get("/employee/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/employee/:id", authenticate, requireSelfOrMinRole("id"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const query = hoursQuerySchema.parse(req.query);
     const result = await hoursService.getEmployeeHours(param(req, "id"), query.from, query.to, query.page, query.limit);

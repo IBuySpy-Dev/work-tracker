@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { assertSelfOrMinRole, authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
 import { ForbiddenError, RoleHierarchy, Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { documentsService } from "./service";
@@ -16,6 +16,7 @@ const router = Router();
 router.post("/upload", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = uploadDocumentSchema.parse(req.body);
+    assertSelfOrMinRole(req.user, input.employeeId);
     // File buffer would come from multer or similar middleware
     const doc = await documentsService.upload(input, Buffer.alloc(0), req.user!.id);
     res.status(201).json(doc);
@@ -50,6 +51,7 @@ router.get("/employee/:employeeId", authenticate, async (req: AuthenticatedReque
 router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const doc = await documentsService.getDocument(param(req, "id"));
+    assertSelfOrMinRole(req.user, doc.employeeId);
     res.json(doc);
   } catch (err) { next(err); }
 });
@@ -57,6 +59,8 @@ router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) =>
 // GET /api/documents/:id/extraction — AI-extracted data with confidence
 router.get("/:id/extraction", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
+    const doc = await documentsService.getDocument(param(req, "id"));
+    assertSelfOrMinRole(req.user, doc.employeeId);
     const results = await documentsService.getExtraction(param(req, "id"));
     res.json(results);
   } catch (err) { next(err); }

@@ -202,6 +202,15 @@ describe("Employees API", () => {
       expect(response.body.error.code).toBe("NOT_FOUND");
     });
 
+    it("returns 403 when an employee attempts to read another employee profile", async () => {
+      const response = await request(app)
+        .get(`/api/employees/${seededTestUsers.supervisor.id}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+    });
+
     it("returns 401 without authentication", async () => {
       const response = await request(app).get(`/api/employees/${existingEmployeeId}`);
 
@@ -313,6 +322,15 @@ describe("Employees API", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("returns 403 when an employee attempts to read another employee readiness", async () => {
+      const response = await request(app)
+        .get(`/api/employees/${seededTestUsers.supervisor.id}/readiness`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
     });
   });
 });

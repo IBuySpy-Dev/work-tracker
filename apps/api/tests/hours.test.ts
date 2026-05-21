@@ -380,6 +380,60 @@ describe("Hours API", () => {
       expect(response.status).toBe(403);
       expect(response.body.error.code).toBe("FORBIDDEN");
     });
+
+    it("returns 403 when an employee clocks in for another employee", async () => {
+      const clockInSpy = vi.spyOn(hoursService, "clockIn");
+      const response = await request(app)
+        .post("/api/hours/clock-in")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .send({ employeeId: seededTestUsers.supervisor.id, timestamp: "2026-03-18T08:00:00.000Z" });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+      expect(clockInSpy).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 when an employee clocks out for another employee", async () => {
+      const clockOutSpy = vi.spyOn(hoursService, "clockOut");
+      const response = await request(app)
+        .post("/api/hours/clock-out")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .send({ employeeId: seededTestUsers.supervisor.id, timestamp: "2026-03-18T17:00:00.000Z" });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+      expect(clockOutSpy).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 when an employee submits manual hours for another employee", async () => {
+      const submitManualEntrySpy = vi.spyOn(hoursService, "submitManualEntry");
+      const response = await request(app)
+        .post("/api/hours/manual")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .send({
+          employeeId: seededTestUsers.supervisor.id,
+          date: "2026-03-18T00:00:00.000Z",
+          hours: 6,
+          qualificationCategory: "Safety",
+          description: "Unauthorized entry",
+          attestation: "I attest this entry is correct",
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+      expect(submitManualEntrySpy).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 when an employee retrieves another employee hours", async () => {
+      const getEmployeeHoursSpy = vi.spyOn(hoursService, "getEmployeeHours");
+      const response = await request(app)
+        .get(`/api/hours/employee/${seededTestUsers.supervisor.id}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+      expect(getEmployeeHoursSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe("Edge cases", () => {

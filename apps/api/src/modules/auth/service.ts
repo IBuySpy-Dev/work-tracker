@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
-import { v5 as uuidv5 } from "uuid";
-import { Roles, UnauthorizedError } from "@e-clat/shared";
+import { Role as PrismaRole } from "@prisma/client";
+import { Role, UnauthorizedError } from "@e-clat/shared";
 import { RegisterInput, LoginInput, RefreshTokenInput, ChangePasswordInput } from "./validators";
 import { notImplemented } from "../../common/utils";
+import { prisma } from "../../config/database";
 import {
   type AuthTokenUser,
   getAccessTokenLifetimeSeconds,
@@ -25,24 +26,27 @@ export interface AuthService {
   oauthCallback(provider: string, code: string): Promise<AuthTokens>;
 }
 
-interface MockAuthUser extends AuthTokenUser {
-  passwordHash: string;
+interface AuthUserRecord {
+  id: string;
+  email: string;
+  role: PrismaRole;
+  passwordHash: string | null;
 }
 
-const MOCK_USER_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-// Password123! — matches test expectations
-const MOCK_PASSWORD_HASH = "$2b$10$ZXFw0QtD.9bPiT.5dvv10e94YbLeopla0m5ElRoSL/9pK3B0.iHm6";
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
 
-const mockUsers: MockAuthUser[] = [
-  { id: uuidv5("employee@example.com", MOCK_USER_NAMESPACE), email: "employee@example.com", role: Roles.EMPLOYEE, passwordHash: MOCK_PASSWORD_HASH },
-  { id: uuidv5("supervisor@example.com", MOCK_USER_NAMESPACE), email: "supervisor@example.com", role: Roles.SUPERVISOR, passwordHash: MOCK_PASSWORD_HASH },
-  { id: uuidv5("manager@example.com", MOCK_USER_NAMESPACE), email: "manager@example.com", role: Roles.MANAGER, passwordHash: MOCK_PASSWORD_HASH },
-  { id: uuidv5("compliance@example.com", MOCK_USER_NAMESPACE), email: "compliance@example.com", role: Roles.COMPLIANCE_OFFICER, passwordHash: MOCK_PASSWORD_HASH },
-  { id: uuidv5("admin@example.com", MOCK_USER_NAMESPACE), email: "admin@example.com", role: Roles.ADMIN, passwordHash: MOCK_PASSWORD_HASH },
-];
+function fromPrismaRole(role: PrismaRole): Role {
+  return role.toLowerCase() as Role;
+}
 
-function findMockUserByEmail(email: string) {
-  return mockUsers.find((user) => user.email === email.trim().toLowerCase());
+function toAuthTokenUser(record: AuthUserRecord): AuthTokenUser {
+  return {
+    id: record.id,
+    email: record.email,
+    role: fromPrismaRole(record.role),
+  };
 }
 
 function buildTokens(user: AuthTokenUser, refreshToken = signRefreshToken(user)): AuthTokens {
@@ -58,12 +62,16 @@ function buildTokens(user: AuthTokenUser, refreshToken = signRefreshToken(user))
 export const authService: AuthService = {
   register: () => notImplemented("register"),
   async login(input) {
-    const user = findMockUserByEmail(input.email);
-    if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+    const user = await prisma.employee.findUnique({
+      where: { email: normalizeEmail(input.email) },
+      select: { id: true, email: true, role: true, passwordHash: true, isActive: true },
+    });
+
+    if (!user || !user.isActive || !user.passwordHash || !(await bcrypt.compare(input.password, user.passwordHash))) {
       throw new UnauthorizedError("Invalid email or password");
     }
 
-    return buildTokens(user);
+    return buildTokens(toAuthTokenUser(user));
   },
   async refreshToken(input) {
     const user = verifyRefreshToken(input.refreshToken);

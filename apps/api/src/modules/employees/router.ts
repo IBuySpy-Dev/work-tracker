@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireRole, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { authenticate, requireRole, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { employeesService } from "./service";
@@ -30,7 +30,7 @@ router.get("/", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: Auth
 });
 
 // GET /api/employees/:id — Get by ID
-router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/:id", authenticate, requireSelfOrMinRole("id"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const employee = await employeesService.getById(param(req, "id"));
     res.json(employee);
@@ -47,7 +47,7 @@ router.put("/:id", authenticate, requireRole(Roles.ADMIN), async (req: Authentic
 });
 
 // GET /api/employees/:id/readiness — Readiness dashboard
-router.get("/:id/readiness", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/:id/readiness", authenticate, requireSelfOrMinRole("id"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const readiness = await employeesService.getReadiness(param(req, "id"));
     res.json(readiness);

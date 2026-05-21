@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import { UnauthorizedError, ForbiddenError, Role, RoleHierarchy } from "@e-clat/shared";
+import { UnauthorizedError, ForbiddenError, Role, RoleHierarchy, Roles } from "@e-clat/shared";
 import { verifyAccessToken } from "../modules/auth/tokens";
 
 export interface AuthenticatedRequest extends Request {
@@ -59,5 +59,36 @@ export function requireMinRole(minRole: Role) {
       return next(new ForbiddenError());
     }
     next();
+  };
+}
+
+export function assertSelfOrMinRole(user: AuthenticatedRequest["user"], targetUserId: string, minRole: Role = Roles.SUPERVISOR) {
+  if (!user) {
+    throw new UnauthorizedError();
+  }
+
+  if (user.id !== targetUserId && RoleHierarchy[user.role] < RoleHierarchy[minRole]) {
+    throw new ForbiddenError();
+  }
+}
+
+export function requireSelfOrMinRole(paramName: string, minRole: Role = Roles.SUPERVISOR) {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new UnauthorizedError());
+    }
+
+    const paramValue = req.params[paramName];
+    const targetUserId = Array.isArray(paramValue) ? paramValue[0] : paramValue;
+    if (!targetUserId) {
+      return next(new UnauthorizedError("Missing resource owner parameter"));
+    }
+
+    try {
+      assertSelfOrMinRole(req.user, targetUserId, minRole);
+      next();
+    } catch (error) {
+      next(error as Error);
+    }
   };
 }

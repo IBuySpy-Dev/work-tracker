@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { assertSelfOrMinRole, authenticate, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { medicalService } from "./service";
@@ -18,6 +18,7 @@ router.post("/", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: Aut
 router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const clearance = await medicalService.getById(param(req, "id"));
+    assertSelfOrMinRole(req.user, clearance.employeeId);
     res.json(clearance);
   } catch (err) { next(err); }
 });
@@ -30,7 +31,7 @@ router.put("/:id", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: A
   } catch (err) { next(err); }
 });
 
-router.get("/employee/:employeeId", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/employee/:employeeId", authenticate, requireSelfOrMinRole("employeeId"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const clearances = await medicalService.listByEmployee(param(req, "employeeId"));
     res.json(clearances);

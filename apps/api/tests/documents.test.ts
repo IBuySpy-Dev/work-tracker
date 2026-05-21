@@ -79,6 +79,7 @@ describe("Documents API", () => {
   let managerToken: string;
   let employeeToken: string;
   let seededDocumentId: string;
+  let seededSupervisorDocumentId: string;
   let noDocumentsEmployeeId: string;
   const createdRecordIds: string[] = [];
   const createdEmployeeIds: string[] = [];
@@ -102,6 +103,19 @@ describe("Documents API", () => {
     });
     seededDocumentId = seededDoc.id;
     createdRecordIds.push(seededDocumentId);
+
+    const supervisorDoc = await prisma.document.create({
+      data: {
+        fileName: `${TEST_PREFIX}-supervisor.pdf`,
+        mimeType: "application/pdf",
+        status: "UPLOADED",
+        employeeId: seededTestUsers.supervisor.id,
+        uploadedBy: seededTestUsers.supervisor.id,
+        storageKey: `test-storage-key-${randomUUID()}`,
+      },
+    });
+    seededSupervisorDocumentId = supervisorDoc.id;
+    createdRecordIds.push(seededSupervisorDocumentId);
 
     const noDocumentsEmployee = await prisma.employee.create({
       data: {
@@ -164,6 +178,16 @@ describe("Documents API", () => {
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
     });
+
+    it("returns 403 when an employee uploads a document for another employee", async () => {
+      const response = await request(app)
+        .post("/api/documents/upload")
+        .set("Authorization", `Bearer ${employeeToken}`)
+        .send(buildDocumentPayload({ employeeId: seededTestUsers.supervisor.id }));
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+    });
   });
 
   describe("GET /api/documents/:id", () => {
@@ -192,6 +216,15 @@ describe("Documents API", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("returns 403 when an employee reads another employee document", async () => {
+      const response = await request(app)
+        .get(`/api/documents/${seededSupervisorDocumentId}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
     });
   });
 

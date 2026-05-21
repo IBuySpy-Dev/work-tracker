@@ -38,6 +38,7 @@ describe("Qualifications API", () => {
   let supervisorToken: string;
   let employeeToken: string;
   let seededQualificationId: string;
+  let seededSupervisorQualificationId: string;
   let oshaStandardId: string;
   let hazcomStandardId: string;
   let faaStandardId: string;
@@ -68,6 +69,19 @@ describe("Qualifications API", () => {
     oshaStandardId = oshaStandard.id;
     hazcomStandardId = hazcomStandard.id;
     faaStandardId = faaStandard.id;
+
+    const supervisorQualification = await prisma.qualification.findFirst({
+      where: {
+        employeeId: seededTestUsers.supervisor.id,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!supervisorQualification) {
+      throw new Error("Expected seeded supervisor qualification to exist for integration tests");
+    }
+
+    seededSupervisorQualificationId = supervisorQualification.id;
   });
 
   afterAll(async () => {
@@ -193,6 +207,15 @@ describe("Qualifications API", () => {
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
     });
+
+    it("returns 403 when an employee reads another employee qualification", async () => {
+      const response = await request(app)
+        .get(`/api/qualifications/${seededSupervisorQualificationId}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+    });
   });
 
   describe("PUT /api/qualifications/:id", () => {
@@ -265,6 +288,15 @@ describe("Qualifications API", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("returns 403 when an employee lists another employee qualifications", async () => {
+      const response = await request(app)
+        .get(`/api/qualifications/employee/${seededTestUsers.supervisor.id}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
     });
   });
 
@@ -349,7 +381,7 @@ describe("Qualifications API", () => {
 
     it("returns 403 when the caller is an employee", async () => {
       const response = await request(app)
-        .get(`/api/qualifications/compliance/${seededTestUsers.employee.id}/${oshaStandardId}`)
+        .get(`/api/qualifications/compliance/${seededTestUsers.supervisor.id}/${oshaStandardId}`)
         .set("Authorization", `Bearer ${employeeToken}`);
 
       expect(response.status).toBe(403);

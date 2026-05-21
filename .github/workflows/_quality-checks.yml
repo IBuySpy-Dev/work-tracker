@@ -31,6 +31,9 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    concurrency:
+      group: db-migrate-${{ github.workflow }}-${{ github.ref }}-${{ inputs.workspace }}
+      cancel-in-progress: false
     services:
       postgres:
         image: ${{ inputs.needs-postgres && 'postgres:16' || '' }}
@@ -62,9 +65,8 @@ jobs:
         run: npm run build -w @e-clat/shared
       
       - name: Generate Prisma client
-        if: inputs.needs-postgres
-        run: npx prisma generate
-        working-directory: data
+        if: inputs.needs-postgres || inputs.workspace == '@e-clat/api'
+        run: npm run db:generate -w @e-clat/data
       
       - name: Run migrations
         if: inputs.needs-postgres

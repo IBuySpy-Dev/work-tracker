@@ -128,19 +128,28 @@ jobs:
         run: npm ci
       - name: Build API
         run: npm run build -w @e-clat/api
-      - name: Package deployable artifact
-        run: zip -r api-package.zip package.json package-lock.json apps/api packages/shared
-      - name: Deploy API artifact
-        uses: azure/webapps-deploy@v3
+      - name: Resolve API Container App resource group
+        id: resolve-container-app
+        shell: bash
+        run: |
+          RESOURCE_GROUP=$(az containerapp show \
+            --name "${{ needs.compute.outputs.api_container_app_name }}" \
+            --query "resourceGroup" \
+            --output tsv)
+          echo "resource_group=${RESOURCE_GROUP}" >> "$GITHUB_OUTPUT"
+      - name: Deploy API to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
         with:
-          app-name: ${{ needs.compute.outputs.api_container_app_name }}
-          package: api-package.zip
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: apps/api/Dockerfile
+          containerAppName: ${{ needs.compute.outputs.api_container_app_name }}
+          resourceGroup: ${{ steps.resolve-container-app.outputs.resource_group }}
       - name: Deployment summary
         run: echo "API deployed to ${{ needs.compute.outputs.api_url }}"
 
   smoke-checks:
     name: Smoke Deploy Checks
-    needs: deploy-api
+    needs: [compute, deploy-api]
     uses: ./.github/workflows/smoke-deploy.yml
     with:
       environment: ${{ inputs.environment }}

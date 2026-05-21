@@ -513,9 +513,20 @@ describe("POST /api/v1/auth/validate", () => {
     vi.clearAllMocks();
   });
 
+  it("requires authentication", async () => {
+    const response = await request(app)
+      .post("/api/v1/auth/validate")
+      .send({
+        token: "any-token",
+      });
+
+    expect(response.status).toBe(401);
+  });
+
   it("returns error for empty token", async () => {
     const response = await request(app)
       .post("/api/v1/auth/validate")
+      .set("Authorization", `Bearer ${generateTestToken(Roles.EMPLOYEE)}`)
       .send({ token: "" });
 
     expect(response.status).toBe(400);
@@ -526,6 +537,7 @@ describe("POST /api/v1/auth/validate", () => {
 
     const response = await request(app)
       .post("/api/v1/auth/validate")
+      .set("Authorization", `Bearer ${generateTestToken(Roles.EMPLOYEE)}`)
       .send({
         token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5In0.eyJzdWIiOiJ1c2VyLTEiLCJpc3MiOiJodHRwczovL3Vua25vd24uY29tIiwiZXhwIjo5OTk5OTk5OTk5fQ.fake-sig",
         provider_id: "c2aade11-be2d-4fab-9d8f-8dd1df502c33",
@@ -539,6 +551,7 @@ describe("POST /api/v1/auth/validate", () => {
   it("validates required token field", async () => {
     const response = await request(app)
       .post("/api/v1/auth/validate")
+      .set("Authorization", `Bearer ${generateTestToken(Roles.EMPLOYEE)}`)
       .send({});
 
     expect(response.status).toBe(400);

@@ -59,7 +59,7 @@ router.delete("/providers/:id", authenticate, requireRole(Roles.ADMIN), async (r
 });
 
 // POST /api/v1/auth/validate — validate token from any provider (all authenticated)
-router.post("/validate", async (req, res, next) => {
+router.post("/validate", authenticate, async (req, res, next) => {
   try {
     const input = validateTokenSchema.parse(req.body);
     const result = await tokenValidator.validate(input.token, input.provider_id);

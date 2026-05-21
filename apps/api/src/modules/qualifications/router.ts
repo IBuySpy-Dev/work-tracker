@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireMinRole, AuthenticatedRequest } from "../../middleware";
+import { assertSelfOrMinRole, authenticate, requireMinRole, requireSelfOrMinRole, AuthenticatedRequest } from "../../middleware";
 import { Roles } from "@e-clat/shared";
 import { param } from "../../common/utils";
 import { qualificationsService } from "./service";
@@ -23,14 +23,14 @@ router.get("/", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: Auth
   } catch (err) { next(err); }
 });
 
-router.get("/employee/:employeeId", authenticate, async (req: AuthenticatedRequest, res, next) => {
+router.get("/employee/:employeeId", authenticate, requireSelfOrMinRole("employeeId"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const result = await qualificationsService.listByEmployee(param(req, "employeeId"));
     res.json(result);
   } catch (err) { next(err); }
 });
 
-router.get("/compliance/:employeeId/:standardId", authenticate, requireMinRole(Roles.SUPERVISOR), async (req: AuthenticatedRequest, res, next) => {
+router.get("/compliance/:employeeId/:standardId", authenticate, requireSelfOrMinRole("employeeId"), async (req: AuthenticatedRequest, res, next) => {
   try {
     const result = await qualificationsService.checkCompliance(param(req, "employeeId"), param(req, "standardId"));
     res.json(result);
@@ -47,6 +47,7 @@ router.get("/:id/audit", authenticate, requireMinRole(Roles.SUPERVISOR), async (
 router.get("/:id", authenticate, async (req: AuthenticatedRequest, res, next) => {
   try {
     const qual = await qualificationsService.getById(param(req, "id"));
+    assertSelfOrMinRole(req.user, qual.employeeId);
     res.json(qual);
   } catch (err) { next(err); }
 });

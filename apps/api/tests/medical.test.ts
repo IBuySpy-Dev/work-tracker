@@ -40,6 +40,7 @@ describe("Medical API", () => {
   let supervisorToken: string;
   let employeeToken: string;
   let seededClearanceId: string;
+  let seededSupervisorClearanceId: string;
   const createdRecordIds: string[] = [];
 
   beforeAll(async () => {
@@ -57,6 +58,17 @@ describe("Medical API", () => {
     }
 
     seededClearanceId = seededClearance.id;
+
+    const supervisorClearance = await prisma.medicalClearance.findFirst({
+      where: { employeeId: seededTestUsers.supervisor.id },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!supervisorClearance) {
+      throw new Error("Expected seeded supervisor medical clearance to exist for integration tests");
+    }
+
+    seededSupervisorClearanceId = supervisorClearance.id;
   });
 
   afterAll(async () => {
@@ -140,6 +152,15 @@ describe("Medical API", () => {
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
     });
+
+    it("returns 403 when an employee reads another employee medical clearance", async () => {
+      const response = await request(app)
+        .get(`/api/medical/${seededSupervisorClearanceId}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
+    });
   });
 
   describe("PUT /api/medical/:id", () => {
@@ -213,6 +234,15 @@ describe("Medical API", () => {
 
       expect(response.status).toBe(401);
       expect(response.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("returns 403 when an employee lists another employee clearances", async () => {
+      const response = await request(app)
+        .get(`/api/medical/employee/${seededTestUsers.supervisor.id}`)
+        .set("Authorization", `Bearer ${employeeToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe("FORBIDDEN");
     });
   });
 
