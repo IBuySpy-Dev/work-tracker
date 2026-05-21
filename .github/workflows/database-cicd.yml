@@ -1,0 +1,47 @@
+name: Database CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "database/**"
+      - "infra/database/**"
+      - ".github/workflows/database-cicd.yml"
+  pull_request:
+    paths:
+      - "database/**"
+      - "infra/database/**"
+      - ".github/workflows/database-cicd.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-database-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SQL schema manifests (if script exists)
+        shell: pwsh
+        run: |
+          if (Test-Path "./scripts/validate-sql-schema.ps1" -and Test-Path "./database/sql-scripts/02-stored-procedures.sql" -and Test-Path "./database/proc-manifest.txt") {
+            ./scripts/validate-sql-schema.ps1 -SeedSqlPath "database/sql-scripts/02-stored-procedures.sql" -ProcManifestPath "database/proc-manifest.txt"
+          } else {
+            Write-Host "No SQL schema validator inputs found; skipping validation."
+          }
+
+  deploy-database:
+    needs: validate-database-artifacts
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: db-deploy-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy database changes (placeholder)
+        run: |
+          echo "Apply database deployment steps here (dacpac/sql migration tooling)."
+          echo "This workflow is intentionally separate from app code pipelines."
+

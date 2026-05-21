@@ -1,0 +1,11 @@
+schemaVersion: "1"
+workcell:
+  name: work-tracker
+  description: "Workcell for work-tracker migration"
+
+cells:
+  - name: cell-stockroom
+    stations:
+      - validate-bom
+      - sync-patterns
+
