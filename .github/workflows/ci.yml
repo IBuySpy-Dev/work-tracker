@@ -137,6 +137,15 @@ jobs:
       - run: npm ci
       - name: Build shared package
         run: npm run build -w @e-clat/shared
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: data
+      - name: Validate Prisma client generated
+        run: |
+          if [ ! -d "data/node_modules/.prisma/client" ]; then
+            echo "ERROR: Prisma client not generated"
+            exit 1
+          fi
       - name: Typecheck API
         run: npm run typecheck -w @e-clat/api
       - name: Typecheck Web
@@ -176,6 +185,12 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
         working-directory: data
+      - name: Validate Prisma client generated
+        run: |
+          if [ ! -d "data/node_modules/.prisma/client" ]; then
+            echo "ERROR: Prisma client not generated"
+            exit 1
+          fi
       - name: Run migrations
         run: npx prisma migrate deploy
         working-directory: data
@@ -195,6 +210,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: package-lock.json
       - run: npm ci
       - name: Build shared package
         run: npm run build -w @e-clat/shared
@@ -212,6 +228,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: data
       - name: Build shared
         run: npm run build -w @e-clat/shared
       - name: Build API
@@ -225,5 +244,8 @@ jobs:
     needs: [test-api, test-web]
     steps:
       - uses: actions/checkout@v6
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: data
       - name: Build API container
         run: docker build --target runtime -t e-clat-api:ci-${{ github.sha }} -f apps/api/Dockerfile .
